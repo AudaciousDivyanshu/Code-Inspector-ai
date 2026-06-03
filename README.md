@@ -58,9 +58,9 @@ The goal of CodeInspector AI is to simplify code security analysis by providing 
 
 ### Core Engineers
 
-* Aditya Kumar Singh
 * Divyanshu Sisodiya
-* Debajit Goswami
+* Debajit Goswami 
+* Aditya Kumar Singh 
 
 ---
 
