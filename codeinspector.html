@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeInspector AI | Elite Code Security Platform</title>
+
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Monaco Editor Loader -->
+    <script>var require = { paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' } };</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/editor/editor.main.nls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/editor/editor.main.js"></script>
+
+    <style>
+        /* --- CORE CSS & TYPOGRAPHY --- */
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&family=Montserrat:ital,wght@0,800;1,800&family=Plus+Jakarta+Sans:wght@300;400;600;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            --elite-navy: #30364f;
+            --elite-slate: #acbac4;
+            --bg-primary: #f8fafc;
+            --text-primary: #0f172a;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.9);
+            --glass-shadow: rgba(15, 23, 42, 0.08);
+            --item-hover: rgba(15, 23, 42, 0.05);
+            --neon-blue: #3b82f6;
+            --neon-purple: #8b5cf6;
+        }
+
+        body.dark {
+            --elite-navy: #60a5fa;
+            --elite-slate: #94a3b8;
+            --bg-primary: #020617;
+            --text-primary: #f8fafc;
+            --glass-bg: rgba(15, 23, 42, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-shadow: rgba(0, 0, 0, 0.4);
+            --item-hover: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        #fluid-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        /* --- GLASSMORPHISM & UI ELEMENTS --- */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px var(--glass-shadow);
+            transition: background 0.4s ease, border 0.4s ease;
+        }
+
+        .logo-main {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, var(--elite-navy) 0%, var(--elite-slate) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-ai {
+            font-family: 'Montserrat', sans-serif;
+            font-style: italic;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--neon-blue) 0%, var(--neon-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #6d28d9 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-soft {
+            min-height: 40px;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            background: rgba(15, 23, 42, 0.06);
+            transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+        }
+
+        body.dark .btn-soft {
+            background: rgba(255, 255, 255, 0.055);
+        }
+
+        .btn-soft:hover {
+            transform: translateY(-1px);
+            border-color: rgba(96, 165, 250, 0.45);
+            background: rgba(59, 130, 246, 0.12);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.3);
+            border-radius: 10px;
+        }
+
+        .file-item {
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .file-item:hover {
+            background: var(--item-hover);
+        }
+
+        .file-item.active {
+            background: rgba(59, 130, 246, 0.15);
+            border-left: 3px solid #3b82f6;
+        }
+
+        .app-shell {
+            min-height: 100vh;
+            height: 100vh;
+        }
+
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: minmax(220px, 260px) minmax(420px, 1fr) minmax(340px, 460px);
+            gap: 0.75rem;
+            min-height: 0;
+        }
+
+        .panel-title {
+            color: rgba(148, 163, 184, 0.95);
+            font-size: 0.66rem;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .metric-card,
+        .insight-card {
+            border-radius: 0.9rem;
+            background: rgba(15, 23, 42, 0.045);
+            border: 1px solid rgba(148, 163, 184, 0.14);
+        }
+
+        body.dark .metric-card,
+        body.dark .insight-card {
+            background: rgba(255, 255, 255, 0.045);
+        }
+
+        .status-pill {
+            border-radius: 999px;
+            border: 1px solid rgba(34, 197, 94, 0.25);
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .mobile-label {
+            display: none;
+        }
+
+        #monaco-original,
+        #monaco-fixed {
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+
+        .monaco-editor .margin,
+        .monaco-editor,
+        .monaco-editor-background {
+            background-color: transparent !important;
+        }
+
+        /* --- TOASTS --- */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            pointer-events: auto;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .toast.error {
+            background: #ef4444;
+        }
+
+        .toast.success {
+            background: #10b981;
+        }
+
+        .toast.info {
+            background: #3b82f6;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        /* --- CYBER WARP TRANSITION --- */
+        #cyber-warp-transition {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            background: radial-gradient(circle at center, transparent 0%, #020617 100%), #020617;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        #cyber-warp-transition.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .warp-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #3b82f6, #10b981, transparent);
+            transform: scaleX(0);
+            opacity: 0;
+        }
+
+        #cyber-warp-transition.active .warp-line {
+            animation: warpFlash 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes warpFlash {
+            0% {
+                transform: scaleX(0);
+                opacity: 0;
+                box-shadow: 0 0 0 transparent;
+            }
+
+            50% {
+                transform: scaleX(1);
+                opacity: 1;
+                box-shadow: 0 0 50px 20px rgba(59, 130, 246, 0.8);
+                height: 10px;
+            }
+
+            100% {
+                transform: scaleX(0);
+                opacity: 0;
+                box-shadow: 0 0 0 transparent;
+                height: 2px;
+            }
+        }
+
+        .view-layer {
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .view-hidden-zoom-in {
+            opacity: 0 !important;
+            transform: scale(1.05) !important;
+            pointer-events: none !important;
+        }
+
+        .view-hidden-zoom-out {
+            opacity: 0 !important;
+            transform: scale(0.95) !important;
+            pointer-events: none !important;
+        }
+
+        /* --- ANIMATED EYE LOGO --- */
+        .hero-animated-logo {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin: 0 auto 3rem auto;
+            border-radius: 50%;
+            box-shadow: 0 20px 50px rgba(59, 130, 246, 0.3), 0 0 0 2px rgba(59, 130, 246, 0.2);
+            background: #020617;
+            overflow: hidden;
+            animation: floatFace 6s ease-in-out infinite;
+        }
+
+        @keyframes floatFace {
+
+            0%,
+            100% {
+                transform: translateY(0px) scale(1);
+            }
+
+            50% {
+                transform: translateY(-15px) scale(1.02);
+            }
+        }
+
+        .logo-base-img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        .dynamic-eye-wrapper {
+            position: absolute;
+            top: 47%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 125px;
+            height: 60px;
+            border-radius: 50%;
+            z-index: 5;
+            overflow: hidden;
+            box-shadow: inset 0 0 15px 8px rgba(0, 0, 0, 0.9);
+        }
+
+        .retina-mover {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: retinaMove 14s ease-in-out infinite;
+        }
+
+        .cyber-iris-overlay {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #3b82f6 0%, #0f172a 80%);
+            box-shadow: 0 0 25px #3b82f6, inset 0 0 15px rgba(255, 255, 255, 0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: irisColorShift 14s infinite;
+        }
+
+        .cyber-pupil-overlay {
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 20px #fff, inset 0 0 8px #000;
+            animation: pupilDilate 14s infinite;
+        }
+
+        .eyelid-top,
+        .eyelid-bottom {
+            position: absolute;
+            left: -10%;
+            width: 120%;
+            height: 50%;
+            background: #080f1a;
+            z-index: 10;
+        }
+
+        .eyelid-top {
+            top: 0;
+            transform-origin: top;
+            border-bottom: 2px solid rgba(59, 130, 246, 0.5);
+            border-radius: 0 0 50% 50%;
+            animation: blinkTop 6s infinite;
+        }
+
+        .eyelid-bottom {
+            bottom: 0;
+            transform-origin: bottom;
+            border-top: 2px solid rgba(59, 130, 246, 0.5);
+            border-radius: 50% 50% 0 0;
+            animation: blinkBottom 6s infinite;
+        }
+
+        @keyframes blinkTop {
+
+            0%,
+            46%,
+            49%,
+            96%,
+            99%,
+            100% {
+                transform: scaleY(0);
+            }
+
+            47%,
+            48%,
+            97%,
+            98% {
+                transform: scaleY(1.05);
+            }
+        }
+
+        @keyframes blinkBottom {
+
+            0%,
+            46%,
+            49%,
+            96%,
+            99%,
+            100% {
+                transform: scaleY(0);
+            }
+
+            47%,
+            48%,
+            97%,
+            98% {
+                transform: scaleY(1.05);
+            }
+        }
+
+        @keyframes retinaMove {
+
+            0%,
+            15% {
+                transform: translate(-50%, -50%);
+            }
+
+            18% {
+                transform: translate(calc(-50% - 15px), -50%);
+            }
+
+            22% {
+                transform: translate(calc(-50% + 15px), -50%);
+            }
+
+            25%,
+            45% {
+                transform: translate(-50%, calc(-50% - 8px));
+            }
+
+            65%,
+            85% {
+                transform: translate(-50%, calc(-50% + 8px));
+            }
+
+            90%,
+            100% {
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        @keyframes irisColorShift {
+
+            0%,
+            22% {
+                background: radial-gradient(circle, #3b82f6 0%, #0f172a 80%);
+                box-shadow: 0 0 25px #3b82f6;
+            }
+
+            25%,
+            45% {
+                background: radial-gradient(circle, #10b981 0%, #022c22 80%);
+                box-shadow: 0 0 35px #10b981;
+            }
+
+            48%,
+            62% {
+                background: radial-gradient(circle, #3b82f6 0%, #0f172a 80%);
+                box-shadow: 0 0 25px #3b82f6;
+            }
+
+            65%,
+            85% {
+                background: radial-gradient(circle, #ef4444 0%, #450a0a 80%);
+                box-shadow: 0 0 45px #ef4444;
+            }
+
+            88%,
+            100% {
+                background: radial-gradient(circle, #3b82f6 0%, #0f172a 80%);
+                box-shadow: 0 0 25px #3b82f6;
+            }
+        }
+
+        @keyframes pupilDilate {
+
+            0%,
+            45%,
+            90%,
+            100% {
+                transform: scale(1);
+            }
+
+            50%,
+            65% {
+                transform: scale(1.4);
+            }
+
+            70%,
+            85% {
+                transform: scale(0.6);
+            }
+        }
+
+        /* --- FLOATING ROBOT --- */
+        .robot-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1e40af 0%, #8b5cf6 100%);
+            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .robot-btn:hover {
+            transform: scale(1.1) translateY(-5px);
+            box-shadow: 0 15px 35px rgba(139, 92, 246, 0.7);
+        }
+
+        .robot-eyes {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+
+        .robot-eye {
+            width: 8px;
+            height: 12px;
+            background: #fff;
+            border-radius: 4px;
+            animation: blink 4s infinite;
+        }
+
+        .robot-mouth {
+            width: 20px;
+            height: 4px;
+            background: #fff;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .robot-btn:hover .robot-mouth {
+            height: 12px;
+            border-radius: 0 0 20px 20px;
+            width: 26px;
+            margin-top: -2px;
+        }
+
+        @keyframes blink {
+
+            0%,
+            90%,
+            100% {
+                transform: scaleY(1);
+            }
+
+            95% {
+                transform: scaleY(0.1);
+            }
+        }
+
+        /* Custom Toggle Switch */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #10b981;
+        }
+
+        .toggle-checkbox:checked+.toggle-label {
+            background-color: #10b981;
+        }
+
+        @media (max-width: 1180px) {
+            .app-shell {
+                height: auto;
+                min-height: 100vh;
+                overflow-y: auto;
+            }
+
+            .workspace-grid {
+                grid-template-columns: 240px minmax(0, 1fr);
+                grid-auto-rows: minmax(260px, auto);
+            }
+
+            .results-panel {
+                grid-column: 1 / -1;
+                min-height: 520px;
+            }
+        }
+
+        @media (max-width: 820px) {
+            .app-header {
+                align-items: flex-start;
+                gap: 1rem;
+                flex-direction: column;
+            }
+
+            .app-actions {
+                width: 100%;
+                display: grid;
+                grid-template-columns: 1fr repeat(2, 44px);
+                gap: 0.5rem;
+            }
+
+            .app-actions .status-pill {
+                display: none !important;
+            }
+
+            .workspace-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar-panel,
+            .results-panel {
+                width: 100%;
+                min-height: 280px;
+            }
+
+            .dashboard-row {
+                height: auto !important;
+            }
+
+            .mobile-label {
+                display: inline;
+            }
+
+            .desktop-label {
+                display: none;
+            }
+
+            .hero-animated-logo {
+                width: 210px;
+                height: 210px;
+            }
+        }
+    </style>
+</head>
+
+<body class="dark relative antialiased selection:bg-blue-500/30 selection:text-blue-200">
+
+    <!-- Global Background Elements -->
+    <canvas id="fluid-canvas"></canvas>
+    <div id="toast-container"></div>
+    <div
+        class="fixed inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiLz48L3N2Zz4=')] opacity-50 z-[-1] pointer-events-none">
+    </div>
+
+    <!-- The Cyber Warp Transition Overlay -->
+    <div id="cyber-warp-transition" class="hidden">
+        <div class="warp-line"></div>
+        <i class="fas fa-fingerprint text-6xl text-blue-500 animate-pulse absolute opacity-20"></i>
+    </div>
+
+    <!-- Slide Panel Overlay -->
+    <div id="overlay"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden opacity-0 transition-opacity duration-300"
+        onclick="toggleTools()"></div>
+
+    <!-- ========================================== -->
+    <!-- VIEW 1: LANDING PAGE                       -->
+    <!-- ========================================== -->
+    <div id="view-landing" class="view-layer block w-full opacity-100 transform scale-100 transition-all duration-700">
+        <!-- Ambient Glows -->
+        <div
+            class="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-[radial-gradient(circle,rgba(59,130,246,0.15)_0%,transparent_70%)] z-[-1] pointer-events-none">
+        </div>
+        <div
+            class="absolute top-[40%] right-[-20%] w-[60vw] h-[60vw] bg-[radial-gradient(circle,rgba(139,92,246,0.1)_0%,transparent_70%)] z-[-1] pointer-events-none">
+        </div>
+
+        <!-- Navigation -->
+        <nav class="fixed w-full z-40 top-0 transition-all duration-300" id="navbar">
+            <div class="max-w-7xl mx-auto px-6 py-4">
+                <div class="glass rounded-2xl px-6 py-3 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="relative w-10 h-10 rounded-xl border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.3)] overflow-hidden flex items-center justify-center bg-[#0d121c]">
+                            <img src="./image_691506.jpg" alt="AI Eye Logo"
+                                class="w-[120%] h-[120%] object-cover object-center"
+                                onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzAyMDYxNyIvPjxwYXRoIGQ9Ik0gMjAgMTAwIFEgMTAwIDIwIDE4MCAxMDAgUSAxMDAgMTgwIDIwIDEwMCBaIiBmaWxsPSJub25lIiBzdHJva2U9IiMzYjgyZjYiIHN0cm9rZS13aWR0aD0iNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzk0YTNiOCIgc3Ryb2tlLXdpZHRoPSI4Ii8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSIzMCIgZmlsbD0iIzFlNDBhZiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iMTUiIGZpbGw9IiM2MGE1ZmEiLz48L3N2Zz4='">
+                        </div>
+                        <a href="#" class="logo-main flex items-baseline gap-1 text-xl">CodeInspector <span
+                                class="logo-ai text-lg">AI</span></a>
+                    </div>
+                    <div
+                        class="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600 dark:text-slate-300">
+                        <a href="#features" class="hover:text-blue-500 transition-colors">Features</a>
+                        <a href="#how-it-works" class="hover:text-blue-500 transition-colors">How it Works</a>
+                        <a href="#developers" class="hover:text-blue-500 transition-colors">Developers</a>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="openAuthModal('login')"
+                            class="hidden md:block text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-blue-500 transition-colors px-4">Sign
+                            In</button>
+                        <button onclick="openAuthModal('signup')"
+                            class="btn-primary text-white text-sm font-bold py-2 px-5 rounded-xl shadow-lg flex items-center gap-2">
+                            Enter Workspace <i class="fas fa-arrow-right text-[10px]"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section
+            class="relative pt-40 pb-20 lg:pt-48 lg:pb-32 px-6 flex flex-col items-center text-center max-w-5xl mx-auto z-10">
+            <div
+                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300 text-xs font-bold uppercase tracking-widest mb-8">
+                <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> Engine v2.0 Now Live
+            </div>
+
+            <!-- SEAMLESS HYBRID AI LOGO -->
+            <div class="hero-animated-logo">
+                <img src="./image_691506.jpg" class="logo-base-img" alt="AI Base Logo"
+                    onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzAyMDYxNyIvPjxwYXRoIGQ9Ik0gMjAgMTAwIFEgMTAwIDIwIDE4MCAxMDAgUSAxMDAgMTgwIDIwIDEwMCBaIiBmaWxsPSJub25lIiBzdHJva2U9IiMzYjgyZjYiIHN0cm9rZS13aWR0aD0iNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzk0YTNiOCIgc3Ryb2tlLXdpZHRoPSI4Ii8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSIzMCIgZmlsbD0iIzFlNDBhZiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iMTUiIGZpbGw9IiM2MGE1ZmEiLz48L3N2Zz4='">
+                <div class="dynamic-eye-wrapper">
+                    <div class="eyelid-top"></div>
+                    <div class="retina-mover">
+                        <div class="cyber-iris-overlay">
+                            <div class="cyber-pupil-overlay"></div>
+                        </div>
+                    </div>
+                    <div class="eyelid-bottom"></div>
+                </div>
+            </div>
+
+            <h1 class="font-['Outfit'] text-[clamp(3rem,6vw,5rem)] leading-[1.1] font-bold tracking-tight mb-6 mt-4">
+                Beyond Traditional Static Analysis.<br>
+                <span class="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">Autonomous
+                    Vulnerability Resolution.</span>
+            </h1>
+
+            <p
+                class="text-slate-600 dark:text-slate-400 text-lg md:text-xl max-w-3xl mb-10 leading-relaxed font-medium">
+                Eradicate false positives and uncover complex inter-procedural vulnerabilities. Our AI-driven SAST
+                engine understands deep data flows, builds architectural call graphs, and synthesizes safe, line-level
+                patches instantly.
+            </p>
+
+            <div class="flex flex-col sm:flex-row gap-4 w-full justify-center">
+                <button onclick="openAuthModal('signup')"
+                    class="btn-primary text-white text-base font-bold py-4 px-8 rounded-xl shadow-[0_0_30px_rgba(59,130,246,0.4)] flex items-center justify-center gap-3">
+                    <i class="fas fa-terminal"></i> Launch SAST Workspace
+                </button>
+            </div>
+
+            <!-- Teaser Window -->
+            <div
+                class="mt-20 w-full relative rounded-2xl glass p-2 shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-t border-black/10 dark:border-white/20 transform perspective-1000 rotateX-2 hover:rotateX-0 transition-transform duration-700">
+                <div
+                    class="absolute inset-0 bg-gradient-to-t from-[var(--bg-primary)] via-transparent to-transparent z-10 rounded-2xl pointer-events-none">
+                </div>
+                <div
+                    class="bg-slate-100 dark:bg-[#0f172a] rounded-xl h-[400px] overflow-hidden flex border border-black/5 dark:border-white/5 relative text-left">
+                    <div class="w-1/4 border-r border-black/5 dark:border-white/5 p-4 hidden sm:block">
+                        <div class="w-1/2 h-2 bg-slate-300 dark:bg-slate-700 rounded mb-4"></div>
+                        <div class="space-y-2">
+                            <div class="w-full h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                            <div
+                                class="w-3/4 h-4 bg-blue-100 border border-blue-300 dark:bg-blue-900/40 dark:border-blue-500/30 rounded">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-grow p-4 flex flex-col">
+                        <div class="flex gap-2 mb-4 border-b border-black/5 dark:border-white/5 pb-2">
+                            <div class="text-xs font-mono text-blue-600 dark:text-blue-400">src/api/auth.js</div>
+                        </div>
+                        <div class="font-mono text-sm space-y-2 opacity-80">
+                            <div class="text-purple-600 dark:text-purple-400">function <span
+                                    class="text-blue-600 dark:text-blue-300">processInput</span>(data) {</div>
+                            <div class="pl-4 text-slate-500 dark:text-slate-400">// Taint engine detects unsafe flow
+                            </div>
+                            <div class="pl-4"><span
+                                    class="text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-400/10 px-1 rounded">eval(data);</span>
+                                <span class="text-red-600 dark:text-red-500 text-xs ml-2">&lt;-- CRITICAL</span>
+                            </div>
+                            <div class="text-purple-600 dark:text-purple-400">}</div>
+                        </div>
+                        <div
+                            class="mt-auto glass border-green-500/30 bg-green-500/10 p-3 rounded-lg flex items-center justify-between z-20 relative">
+                            <span class="text-xs font-mono text-green-700 dark:text-green-400">+
+                                JSON.parse(data);</span>
+                            <div
+                                class="px-2 py-1 bg-green-500 text-white dark:text-black text-[10px] font-bold rounded">
+                                Safe Diff Generated</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section id="features" class="py-20 relative z-10">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl font-bold font-['Outfit'] mb-4">Enterprise-Grade Analysis</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div
+                        class="glass p-8 rounded-2xl flex flex-col hover:-translate-y-2 hover:border-t-blue-500 transition-all duration-300">
+                        <div
+                            class="w-12 h-12 rounded-xl bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl mb-6 border border-blue-500/30">
+                            <i class="fas fa-sitemap"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3">Deep AST Parsing</h3>
+                        <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-4">Transforms code into
+                            structured nodes to calculate logic complexities.</p>
+                    </div>
+                    <div
+                        class="glass p-8 rounded-2xl flex flex-col hover:-translate-y-2 hover:border-t-purple-500 transition-all duration-300">
+                        <div
+                            class="w-12 h-12 rounded-xl bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xl mb-6 border border-purple-500/30">
+                            <i class="fas fa-project-diagram"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3">Inter-proc Taint Graph</h3>
+                        <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-4">Follows unsafe
+                            variables from source across multiple functions.</p>
+                    </div>
+                    <div
+                        class="glass p-8 rounded-2xl flex flex-col hover:-translate-y-2 hover:border-t-emerald-500 transition-all duration-300">
+                        <div
+                            class="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl mb-6 border border-emerald-500/30">
+                            <i class="fas fa-wand-magic-sparkles"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3">Line-Level AI Patches</h3>
+                        <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-4">Generates minimal
+                            diff patches to neutralize threats flawlessly.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Developers Section -->
+        <section id="developers" class="py-20 relative z-10 border-t border-black/5 dark:border-white/5">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl font-bold font-['Outfit'] mb-4">Meet the Developers</h2>
+                    <p class="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-medium">The engineers behind the
+                        CodeInspector AI platform.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+                    <!-- Dev 1: Aditya Kumar Singh -->
+                    <div
+                        class="glass p-8 rounded-2xl flex flex-col items-center text-center hover:-translate-y-2 transition-all duration-300 border-t-4 border-t-transparent hover:border-t-blue-500">
+                        <!-- Replace src with Aditya's image URL -->
+                        <img src="./aditya.jpg" alt="Aditya Kumar Singh"
+                            class="w-24 h-24 rounded-full border-4 border-black/10 dark:border-white/10 mb-4 object-cover shadow-lg">
+                        <h3 class="text-xl font-bold mb-1">Aditya Kumar Singh</h3>
+                        <p class="text-blue-600 dark:text-blue-400 text-sm font-semibold mb-3 tracking-wide">Core
+                            Engineer</p>
+                        <div class="flex gap-4 text-slate-500">
+                            <!-- Replace hrefs with actual links -->
+                            <a href="#" target="_blank" class="hover:text-blue-500 transition-colors"><i
+                                    class="fab fa-github text-xl"></i></a>
+                            <a href="#" target="_blank" class="hover:text-blue-500 transition-colors"><i
+                                    class="fab fa-linkedin text-xl"></i></a>
+                        </div>
+                    </div>
+
+                    <!-- Dev 2: Divyanshu Sisodiya -->
+                    <div
+                        class="glass p-8 rounded-2xl flex flex-col items-center text-center hover:-translate-y-2 transition-all duration-300 border-t-4 border-t-transparent hover:border-t-purple-500">
+                        <!-- Replace src with Divyanshu's image URL -->
+                        <img src="./divyanshu.jpg" alt="Divyanshu Sisodiya"
+                            class="w-24 h-24 rounded-full border-4 border-black/10 dark:border-white/10 mb-4 object-cover shadow-lg">
+                        <h3 class="text-xl font-bold mb-1">Divyanshu Sisodiya</h3>
+                        <p class="text-purple-600 dark:text-purple-400 text-sm font-semibold mb-3 tracking-wide">Core
+                            Engineer</p>
+                        <div class="flex gap-4 text-slate-500">
+                            <!-- Replace hrefs with actual links -->
+                            <a href="#" target="_blank" class="hover:text-purple-500 transition-colors"><i
+                                    class="fab fa-github text-xl"></i></a>
+                            <a href="#" target="_blank" class="hover:text-purple-500 transition-colors"><i
+                                    class="fab fa-linkedin text-xl"></i></a>
+                        </div>
+                    </div>
+
+                    <!-- Dev 3: Debajit Goswami -->
+                    <div
+                        class="glass p-8 rounded-2xl flex flex-col items-center text-center hover:-translate-y-2 transition-all duration-300 border-t-4 border-t-transparent hover:border-t-emerald-500">
+                        <!-- Replace src with Debajit's image URL -->
+                        <img src="./debajit.jpg" alt="Debajit Goswami"
+                            class="w-24 h-24 rounded-full border-4 border-black/10 dark:border-white/10 mb-4 object-cover shadow-lg">
+                        <h3 class="text-xl font-bold mb-1">Debajit Goswami</h3>
+                        <p class="text-emerald-600 dark:text-emerald-400 text-sm font-semibold mb-3 tracking-wide">Core
+                            Engineer</p>
+                        <div class="flex gap-4 text-slate-500">
+                            <!-- Replace hrefs with actual links -->
+                            <a href="#" target="_blank" class="hover:text-emerald-500 transition-colors"><i
+                                    class="fab fa-github text-xl"></i></a>
+                            <a href="#" target="_blank" class="hover:text-emerald-500 transition-colors"><i
+                                    class="fab fa-linkedin text-xl"></i></a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="pt-16 pb-8 relative z-10 border-t border-black/5 dark:border-white/5">
+            <div class="max-w-4xl mx-auto px-6 text-center">
+                <h2 class="text-2xl md:text-3xl font-bold mb-6 font-['Outfit']">Ready to secure your application layer?
+                </h2>
+                <button onclick="openAuthModal('signup')"
+                    class="btn-primary text-white text-sm font-bold py-3 px-8 rounded-xl shadow-lg mb-12">Create Free
+                    Account</button>
+                <div
+                    class="flex justify-between items-center border-t border-black/10 dark:border-white/10 pt-8 text-xs text-slate-500 font-semibold flex-col md:flex-row gap-4">
+                    <div class="flex items-center gap-2">
+                        <img src="./image_691506.jpg"
+                            class="w-6 h-6 rounded border border-black/10 dark:border-white/20 object-cover" alt="Icon"
+                            onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzAyMDYxNyIvPjxwYXRoIGQ9Ik0gMjAgMTAwIFEgMTAwIDIwIDE4MCAxMDAgUSAxMDAgMTgwIDIwIDEwMCBaIiBmaWxsPSJub25lIiBzdHJva2U9IiMzYjgyZjYiIHN0cm9rZS13aWR0aD0iNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzk0YTNiOCIgc3Ryb2tlLXdpZHRoPSI4Ii8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSIzMCIgZmlsbD0iIzFlNDBhZiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iMTUiIGZpbGw9IiM2MGE1ZmEiLz48L3N2Zz4='">
+                        <span>© 2026 CodeInspector AI. All rights reserved.</span>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VIEW 2: MAIN SAST AI APP                   -->
+    <!-- ========================================== -->
+    <div id="view-app"
+        class="view-layer hidden w-full app-shell flex flex-col p-3 gap-3 overflow-hidden view-hidden-zoom-out">
+
+        <!-- App Header -->
+        <header class="glass app-header rounded-2xl p-3 flex justify-between items-center shrink-0 z-10">
+            <div class="flex items-center gap-4">
+                <div
+                    class="relative w-12 h-12 rounded-2xl border border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.3)] overflow-hidden flex-shrink-0 group flex items-center justify-center bg-[#0d121c]">
+                    <img src="./image_691506.jpg" alt="AI Eye Logo"
+                        class="w-[120%] h-[120%] object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-in-out"
+                        onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzAyMDYxNyIvPjxwYXRoIGQ9Ik0gMjAgMTAwIFEgMTAwIDIwIDE4MCAxMDAgUSAxMDAgMTgwIDIwIDEwMCBaIiBmaWxsPSJub25lIiBzdHJva2U9IiMzYjgyZjYiIHN0cm9rZS13aWR0aD0iNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzk0YTNiOCIgc3Ryb2tlLXdpZHRoPSI4Ii8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSIzMCIgZmlsbD0iIzFlNDBhZiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iMTUiIGZpbGw9IiM2MGE1ZmEiLz48L3N2Zz4='">
+                </div>
+                <div>
+                    <h1 class="logo-main flex items-baseline gap-1 text-[1.5rem]">CodeInspector <span
+                            class="logo-ai text-sm">AI</span></h1>
+                    <p class="text-[9px] font-bold tracking-widest opacity-60 uppercase mt-0.5">Enterprise AST • Call
+                        Graph Engine</p>
+                </div>
+            </div>
+            <div class="app-actions flex gap-3">
+                <button onclick="runRepoScan()"
+                    class="btn-soft text-blue-600 dark:text-blue-400 px-4 py-2 text-xs font-bold flex items-center justify-center gap-2">
+                    <i class="fas fa-server"></i> <span>Run Full Scan</span>
+                </button>
+                <div
+                    class="status-pill px-3 py-2 flex items-center gap-2 hidden sm:flex">
+                    <div id="status-light"
+                        class="h-2 w-2 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.8)]"></div>
+                    <span class="text-[10px] font-bold tracking-widest uppercase" id="status-text">Engine Idle</span>
+                </div>
+                <button onclick="toggleTools()"
+                    class="btn-soft px-4 py-2 flex items-center justify-center" title="Scan Settings">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
+                <button onclick="logoutUser()"
+                    class="btn-soft px-4 py-2 text-red-600 dark:text-red-400 flex items-center justify-center"
+                    title="Log Out">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- App Workspace -->
+        <div class="workspace-grid flex-grow min-h-0">
+            <!-- Sidebar / File Tree -->
+            <div class="sidebar-panel glass rounded-2xl p-4 flex flex-col overflow-y-auto custom-scrollbar">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="panel-title">Workspace Files</h3>
+                    <button onclick="openAddFileModal()" class="btn-soft w-9 h-9 text-blue-500 hover:text-blue-400 flex items-center justify-center" title="Add File"><i
+                            class="fas fa-plus text-sm"></i></button>
+                </div>
+                <div id="file-tree"
+                    class="flex flex-col gap-1 text-sm font-semibold text-slate-700 dark:text-slate-300"></div>
+
+                <div class="mt-auto pt-4 border-t border-black/10 dark:border-white/10 space-y-2">
+                    <h3 class="panel-title mb-2">Metrics</h3>
+                    <div class="metric-card flex justify-between items-center text-xs font-semibold px-3 py-2"><span class="opacity-70">Total
+                            Files</span><span id="stat-files" class="text-blue-500 text-base font-black">0</span></div>
+                    <div class="metric-card flex justify-between items-center text-xs font-semibold px-3 py-2"><span class="opacity-70">Total
+                            Vulns</span><span id="stat-vulns" class="text-red-500 text-base font-black">0</span></div>
+                </div>
+            </div>
+
+            <!-- Middle: Editor & Dashboard -->
+            <div class="flex-grow flex flex-col gap-3 min-w-0">
+                <div class="glass rounded-2xl p-2 flex-grow flex flex-col relative shadow-xl">
+                    <div
+                        class="px-3 py-2 border-b border-black/5 dark:border-white/5 flex justify-between items-center shrink-0">
+                        <span class="text-sm font-bold flex items-center gap-2"><i
+                                class="fas fa-file-code text-blue-500"></i> <span
+                                id="current-file-label">src/api/auth.js</span></span>
+                    </div>
+                    <div id="monaco-original" class="flex-grow w-full mt-2 relative">
+                        <div id="monaco-placeholder"
+                            class="absolute inset-0 flex items-center justify-center bg-black/5 dark:bg-white/5 z-10 text-sm font-bold opacity-50">
+                            Initializing IDE...</div>
+                    </div>
+                    <div id="auto-fix-container" class="absolute bottom-4 right-4 hidden z-10">
+                        <button id="btn-auto-fix"
+                            class="btn-primary text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-2xl text-sm">
+                            <i class="fas fa-wand-magic-sparkles"></i> Auto-Patch Line Diff
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dashboard Row -->
+                <div class="dashboard-row grid grid-cols-1 lg:grid-cols-3 gap-3 shrink-0 h-[140px]">
+                    <div
+                        class="glass rounded-2xl p-4 flex flex-col justify-between border-l-4 border-emerald-500 group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-[9px] font-black uppercase tracking-widest opacity-60">Security Posture
+                                </p>
+                                <h2 id="security-grade" class="text-3xl font-black text-emerald-500 mt-1">A+</h2>
+                            </div>
+                            <i
+                                class="fas fa-shield-halved text-2xl opacity-10 group-hover:scale-110 transition-transform"></i>
+                        </div>
+                        <div class="w-full bg-black/10 dark:bg-white/10 rounded-full h-1.5 mt-2">
+                            <div id="security-progress"
+                                class="bg-emerald-500 h-1.5 rounded-full transition-all duration-700"
+                                style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="glass rounded-2xl p-3 flex flex-col border-l-4 border-purple-500 overflow-hidden">
+                        <p
+                            class="panel-title mb-2 text-purple-600 dark:text-purple-400">
+                            Live Taint Trace</p>
+                        <div id="taint-terminal"
+                            class="text-[10px] text-purple-700 dark:text-purple-300 leading-relaxed overflow-y-auto custom-scrollbar h-full font-mono">
+                            > System idle...
+                        </div>
+                    </div>
+                    <div class="glass rounded-2xl p-3 flex flex-col border-l-4 border-blue-500 justify-center gap-2">
+                        <p class="panel-title mb-1">AI Copilot Actions
+                        </p>
+                        <button onclick="triggerQuickAction('tests')"
+                            class="btn-soft w-full text-left text-xs px-3 py-1.5 flex items-center gap-2 font-semibold">
+                            <i class="fas fa-vial text-amber-500 w-4"></i> Generate Unit Tests
+                        </button>
+                        <button onclick="triggerQuickAction('jsdoc')"
+                            class="btn-soft w-full text-left text-xs px-3 py-1.5 flex items-center gap-2 font-semibold">
+                            <i class="fas fa-book text-blue-500 w-4"></i> Document (JSDoc)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar: Results Panel -->
+            <div class="results-panel flex flex-col gap-3 min-w-0">
+                <div class="glass rounded-2xl p-4 flex flex-col h-1/2 relative">
+                    <div
+                        class="flex items-center justify-between mb-2 border-b border-black/10 dark:border-white/10 pb-2">
+                        <h3 class="font-black text-xs flex items-center gap-2"><i
+                                class="fas fa-shield-virus text-red-500 dark:text-red-400"></i> SAST Vulnerability Log
+                        </h3>
+                        <span id="issue-count"
+                            class="text-[10px] font-bold tracking-widest uppercase bg-black/5 dark:bg-white/10 px-2 py-1 rounded">0
+                            Findings</span>
+                    </div>
+                    <div id="results-container" class="space-y-2 flex-grow overflow-y-auto pr-1 custom-scrollbar">
+                        <div class="flex flex-col items-center justify-center h-full text-center opacity-50">
+                            <i class="fas fa-check-double text-3xl mb-2 text-green-500"></i>
+                            <p class="text-[10px] font-bold uppercase tracking-widest">Awaiting Code Execution</p>
+                        </div>
+                    </div>
+                    <div id="loader"
+                        class="absolute inset-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md z-20 hidden flex-col items-center justify-center rounded-2xl border border-blue-500/50">
+                        <i class="fas fa-circle-notch fa-spin text-4xl text-blue-500 mb-4"></i>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 mb-1"
+                            id="loader-status-primary">Building Call Graph...</p>
+                        <p class="text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400"
+                            id="loader-status-secondary">Tracing Taints</p>
+                    </div>
+                </div>
+                <div class="glass rounded-2xl p-2 flex flex-col h-1/2">
+                    <div class="flex gap-2 px-2 pt-1 border-b border-black/10 dark:border-white/10 pb-2 mb-2 shrink-0">
+                        <button onclick="switchTab('diff')" id="tab-diff"
+                            class="px-3 py-1 rounded font-bold text-[10px] bg-black/5 dark:bg-white/10 border border-green-500 text-green-600 dark:text-green-400 flex items-center gap-2">
+                            <i class="fas fa-code-compare"></i> Safe Diff Patch
+                        </button>
+                        <button onclick="switchTab('explain')" id="tab-explain"
+                            class="px-3 py-1 rounded font-bold text-[10px] opacity-60 hover:opacity-100 transition flex items-center gap-2">
+                            <i class="fas fa-project-diagram"></i> Data Flow Trace
+                        </button>
+                    </div>
+                    <div id="monaco-fixed" class="flex-grow w-full relative"></div>
+                    <div id="view-explain"
+                        class="hidden flex-grow w-full p-4 overflow-y-auto custom-scrollbar text-xs leading-relaxed text-slate-700 dark:text-slate-300 bg-black/5 dark:bg-black/20 rounded-lg border border-black/5 dark:border-white/5 font-mono whitespace-pre-wrap">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating Chat Robot -->
+        <div class="robot-btn" onclick="toggleChat()" title="Open Inspector Copilot">
+            <div class="robot-eyes">
+                <div class="robot-eye"></div>
+                <div class="robot... (16 KB left)
